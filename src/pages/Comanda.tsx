@@ -13,7 +13,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Printer, Trash2 } from "lucide-react";
+import { printTicket } from "@/lib/print";
 
 type Mesa = { id: string; numero: number; status: string };
 type Pedido = { id: string; mesa_id: string; total: number; observacao: string | null };
@@ -135,8 +136,40 @@ export default function Comanda() {
     const { error } = await supabase
       .from("itens_pedido").update({ status: "preparando" })
       .in("id", pendentes.map((i) => i.id));
-    if (error) toast.error(error.message);
-    else toast.success(`${pendentes.length} item(ns) enviado(s) à cozinha`);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${pendentes.length} item(ns) enviado(s) à cozinha`);
+    // Imprime cupom para a cozinha automaticamente
+    if (mesa) {
+      printTicket({
+        tipo: "cozinha",
+        mesaNumero: mesa.numero,
+        itens: pendentes.map((i) => ({
+          nome_produto: i.nome_produto,
+          tamanho: i.tamanho,
+          quantidade: i.quantidade,
+          observacao: i.observacao,
+        })),
+      });
+    }
+  };
+
+  const imprimirComanda = () => {
+    if (!mesa) return;
+    if (itens.length === 0) { toast.info("Comanda vazia"); return; }
+    printTicket({
+      tipo: "comanda",
+      mesaNumero: mesa.numero,
+      itens: itens.map((i) => ({
+        nome_produto: i.nome_produto,
+        tamanho: i.tamanho,
+        quantidade: i.quantidade,
+        preco_unitario: Number(i.preco_unitario),
+        subtotal: Number(i.subtotal),
+        observacao: i.observacao,
+      })),
+      total: Number(pedido?.total ?? 0),
+      observacao: pedido?.observacao ?? null,
+    });
   };
 
   if (loading) return <div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -232,6 +265,9 @@ export default function Comanda() {
         </Dialog>
 
         <Button variant="secondary" onClick={enviarParaCozinha}>Enviar à cozinha</Button>
+        <Button variant="outline" onClick={imprimirComanda}>
+          <Printer className="mr-1 h-4 w-4" /> Imprimir comanda
+        </Button>
       </div>
 
       <Card>

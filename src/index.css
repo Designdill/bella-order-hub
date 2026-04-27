@@ -137,3 +137,76 @@
     background-size: 24px 24px;
   }
 }
+
+/* ============ Impressão térmica (cupom 80mm) ============ */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    padding: 4mm 3mm;
+    font-family: 'Courier New', ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #000;
+  }
+  .no-print { display: none !important; }
+}
+
+/* Estilos compartilhados do cupom (também visíveis em preview) */
+.print-area .ticket-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 1px;
+}
+.print-area .ticket-sub {
+  text-align: center;
+  font-size: 11px;
+}
+.print-area .ticket-divider {
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+}
+.print-area .ticket-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.print-area .ticket-item {
+  margin-bottom: 4px;
+}
+.print-area .ticket-item-name {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.print-area .ticket-obs {
+  font-style: italic;
+  font-size: 11px;
+  padding-left: 8px;
+}
+.print-area .ticket-total {
+  font-size: 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
