@@ -287,6 +287,59 @@ export type Database = {
         }
         Relationships: []
       }
+      reservas: {
+        Row: {
+          cliente_nome: string
+          cliente_telefone: string | null
+          created_at: string
+          criado_por: string | null
+          data_hora: string
+          duracao_minutos: number
+          id: string
+          mesa_id: string
+          observacao: string | null
+          pessoas: number
+          status: Database["public"]["Enums"]["status_reserva"]
+          updated_at: string
+        }
+        Insert: {
+          cliente_nome: string
+          cliente_telefone?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_hora: string
+          duracao_minutos?: number
+          id?: string
+          mesa_id: string
+          observacao?: string | null
+          pessoas?: number
+          status?: Database["public"]["Enums"]["status_reserva"]
+          updated_at?: string
+        }
+        Update: {
+          cliente_nome?: string
+          cliente_telefone?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_hora?: string
+          duracao_minutos?: number
+          id?: string
+          mesa_id?: string
+          observacao?: string | null
+          pessoas?: number
+          status?: Database["public"]["Enums"]["status_reserva"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservas_mesa_id_fkey"
+            columns: ["mesa_id"]
+            isOneToOne: false
+            referencedRelation: "mesas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -337,6 +390,7 @@ export type Database = {
         | "cancelado"
       status_mesa: "livre" | "ocupada" | "aguardando_pagamento"
       status_pedido: "aberto" | "fechado" | "cancelado"
+      status_reserva: "confirmada" | "cancelada" | "concluida" | "no_show"
       tamanho_item: "M" | "G" | "UNICO"
     }
     CompositeTypes: {
@@ -482,6 +536,7 @@ export const Constants = {
       ],
       status_mesa: ["livre", "ocupada", "aguardando_pagamento"],
       status_pedido: ["aberto", "fechado", "cancelado"],
+      status_reserva: ["confirmada", "cancelada", "concluida", "no_show"],
       tamanho_item: ["M", "G", "UNICO"],
     },
   },
