@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ChefHat, CheckCircle2, Loader2, Printer, UtensilsCrossed } from "lucide-react";
-import { printTicket } from "@/lib/print";
+import PrintPreviewDialog from "@/components/PrintPreviewDialog";
+import { usePrintPreview } from "@/hooks/usePrintPreview";
 
 type Item = {
   id: string; nome_produto: string; tamanho: string; quantidade: number;
@@ -17,6 +18,7 @@ type Item = {
 export default function Cozinha() {
   const [itens, setItens] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const preview = usePrintPreview();
 
   useEffect(() => {
     document.title = "Cozinha — Cantina Bella Italia";
@@ -43,7 +45,7 @@ export default function Cozinha() {
   };
 
   const reimprimirMesa = (mesaNumero: number, listaItens: Item[]) => {
-    printTicket({
+    preview.open({
       tipo: "cozinha",
       mesaNumero,
       itens: listaItens.map((i) => ({
@@ -92,6 +94,8 @@ export default function Cozinha() {
           </div>
         </div>
       )}
+
+      <PrintPreviewDialog open={preview.isOpen} payload={preview.payload} onClose={preview.close} />
     </div>
   );
 }

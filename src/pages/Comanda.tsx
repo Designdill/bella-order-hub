@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { brl } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Plus, Printer, Trash2 } from "lucide-react";
-import { printTicket } from "@/lib/print";
+import PrintPreviewDialog from "@/components/PrintPreviewDialog";
+import { usePrintPreview } from "@/hooks/usePrintPreview";
 
 type Mesa = { id: string; numero: number; status: string };
 type Pedido = { id: string; mesa_id: string; total: number; observacao: string | null };
@@ -40,6 +41,7 @@ export default function Comanda() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
+  const preview = usePrintPreview();
 
   // Form do modal de adicionar
   const [catSel, setCatSel] = useState<string>("");
@@ -138,9 +140,9 @@ export default function Comanda() {
       .in("id", pendentes.map((i) => i.id));
     if (error) { toast.error(error.message); return; }
     toast.success(`${pendentes.length} item(ns) enviado(s) à cozinha`);
-    // Imprime cupom para a cozinha automaticamente
+    // Abre pré-visualização do cupom para a cozinha
     if (mesa) {
-      printTicket({
+      preview.open({
         tipo: "cozinha",
         mesaNumero: mesa.numero,
         itens: pendentes.map((i) => ({
@@ -156,7 +158,7 @@ export default function Comanda() {
   const imprimirComanda = () => {
     if (!mesa) return;
     if (itens.length === 0) { toast.info("Comanda vazia"); return; }
-    printTicket({
+    preview.open({
       tipo: "comanda",
       mesaNumero: mesa.numero,
       itens: itens.map((i) => ({
@@ -301,6 +303,8 @@ export default function Comanda() {
           )}
         </CardContent>
       </Card>
+
+      <PrintPreviewDialog open={preview.isOpen} payload={preview.payload} onClose={preview.close} />
     </div>
   );
 }
