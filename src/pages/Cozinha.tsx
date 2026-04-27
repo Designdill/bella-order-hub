@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ChefHat, CheckCircle2, Loader2, UtensilsCrossed } from "lucide-react";
+import { ChefHat, CheckCircle2, Loader2, Printer, UtensilsCrossed } from "lucide-react";
+import { printTicket } from "@/lib/print";
 
 type Item = {
   id: string; nome_produto: string; tamanho: string; quantidade: number;
@@ -41,10 +42,31 @@ export default function Cozinha() {
     if (error) toast.error(error.message);
   };
 
+  const reimprimirMesa = (mesaNumero: number, listaItens: Item[]) => {
+    printTicket({
+      tipo: "cozinha",
+      mesaNumero,
+      itens: listaItens.map((i) => ({
+        nome_produto: i.nome_produto,
+        tamanho: i.tamanho,
+        quantidade: i.quantidade,
+        observacao: i.observacao,
+      })),
+    });
+  };
+
   if (loading) return <div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   const preparando = itens.filter((i) => i.status === "preparando");
   const prontos = itens.filter((i) => i.status === "pronto");
+
+  // Agrupa por mesa para botão de reimpressão
+  const porMesa = new Map<number, Item[]>();
+  preparando.forEach((i) => {
+    const n = i.pedidos?.mesas?.numero ?? 0;
+    if (!porMesa.has(n)) porMesa.set(n, []);
+    porMesa.get(n)!.push(i);
+  });
 
   return (
     <div className="space-y-6">
@@ -57,6 +79,19 @@ export default function Cozinha() {
         <Coluna titulo="Em preparo" icone={ChefHat} cor="text-warning" itens={preparando} acao={(i) => marcar(i.id, "pronto")} acaoLabel="Marcar pronto" />
         <Coluna titulo="Prontos" icone={CheckCircle2} cor="text-success" itens={prontos} acao={(i) => marcar(i.id, "entregue")} acaoLabel="Entregue" />
       </div>
+
+      {porMesa.size > 0 && (
+        <div className="rounded-md border bg-card p-4">
+          <h3 className="mb-2 font-display text-lg font-semibold">Reimprimir pedido por mesa</h3>
+          <div className="flex flex-wrap gap-2">
+            {Array.from(porMesa.entries()).map(([numero, lista]) => (
+              <Button key={numero} variant="outline" size="sm" onClick={() => reimprimirMesa(numero, lista)}>
+                <Printer className="mr-1 h-4 w-4" /> Mesa {numero} ({lista.length})
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
