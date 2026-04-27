@@ -14,7 +14,8 @@ import { brl, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Printer, Receipt, Wallet } from "lucide-react";
-import { printTicket } from "@/lib/print";
+import PrintPreviewDialog from "@/components/PrintPreviewDialog";
+import { usePrintPreview } from "@/hooks/usePrintPreview";
 
 type Pedido = {
   id: string; mesa_id: string; total: number; aberto_em: string;
@@ -32,6 +33,7 @@ export default function Caixa() {
   const [forma, setForma] = useState<string>("dinheiro");
   const [valor, setValor] = useState("");
   const [obs, setObs] = useState("");
+  const preview = usePrintPreview();
 
   useEffect(() => {
     document.title = "Caixa — Cantina Bella Italia";
@@ -64,7 +66,7 @@ export default function Caixa() {
       .select("nome_produto, tamanho, quantidade, preco_unitario, subtotal, observacao")
       .eq("pedido_id", p.id)
       .order("created_at");
-    printTicket({
+    preview.open({
       tipo: "comanda",
       mesaNumero: p.mesas.numero,
       itens: (its ?? []).map((i: any) => ({
@@ -209,6 +211,8 @@ export default function Caixa() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PrintPreviewDialog open={preview.isOpen} payload={preview.payload} onClose={preview.close} />
     </div>
   );
 }
