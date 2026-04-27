@@ -18,7 +18,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { CalendarPlus, Loader2, Phone, Users, X, Check, Clock } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CalendarPlus, Loader2, Phone, Users, X, Check, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 type Mesa = { id: string; numero: number; capacidade: number };
@@ -68,6 +69,66 @@ export default function Reservas() {
   const [obs, setObs] = useState("");
   const [salvando, setSalvando] = useState(false);
 
+  // Validação de conflito em tempo real
+  const [conflito, setConflito] = useState<Reserva | null>(null);
+  const [verificando, setVerificando] = useState(false);
+
+  const dataHoraDate = useMemo(() => {
+    if (!dataHora) return null;
+    const d = new Date(dataHora);
+    return isNaN(d.getTime()) ? null : d;
+  }, [dataHora]);
+
+  const dataPassada = useMemo(() => {
+    if (!dataHoraDate) return false;
+    return dataHoraDate.getTime() < Date.now();
+  }, [dataHoraDate]);
+
+  // Verifica conflito (debounce 350ms) sempre que mesa/data/duração mudarem
+  useEffect(() => {
+    if (!openNew) return;
+    if (!mesaId || !dataHoraDate || !duracao) {
+      setConflito(null);
+      return;
+    }
+
+    let cancelado = false;
+    setVerificando(true);
+    const timer = setTimeout(async () => {
+      const inicio = dataHoraDate;
+      const fim = new Date(inicio.getTime() + duracao * 60_000);
+
+      // Busca reservas confirmadas da mesma mesa que possam se sobrepor
+      // janela de busca: -8h antes do início para cobrir reservas longas
+      const janelaInicio = new Date(inicio.getTime() - 8 * 60 * 60_000);
+      const { data, error } = await supabase
+        .from("reservas")
+        .select("*, mesas(numero)")
+        .eq("mesa_id", mesaId)
+        .eq("status", "confirmada")
+        .gte("data_hora", janelaInicio.toISOString())
+        .lte("data_hora", fim.toISOString());
+
+      if (cancelado) return;
+      if (error) {
+        setVerificando(false);
+        return;
+      }
+
+      // Detecta sobreposição [inicio, fim) com [r.inicio, r.fim)
+      const conflitante = (data ?? []).find((r: any) => {
+        const rInicio = new Date(r.data_hora).getTime();
+        const rFim = rInicio + (r.duracao_minutos ?? 0) * 60_000;
+        return rInicio < fim.getTime() && rFim > inicio.getTime();
+      }) as Reserva | undefined;
+
+      setConflito(conflitante ?? null);
+      setVerificando(false);
+    }, 350);
+
+    return () => { cancelado = true; clearTimeout(timer); };
+  }, [openNew, mesaId, dataHoraDate, duracao]);
+
   useEffect(() => {
     document.title = "Reservas — Cantina Bella Italia";
     load();
@@ -104,12 +165,15 @@ export default function Reservas() {
     const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0);
     setDataHora(toLocalDateTimeInput(d));
     setDuracao(90); setObs("");
+    setConflito(null);
   };
 
   const criar = async () => {
     if (!mesaId) return toast.error("Selecione uma mesa");
     if (!nome.trim()) return toast.error("Informe o nome do cliente");
     if (!dataHora) return toast.error("Informe data e hora");
+    if (conflito) return toast.error("Existe conflito de horário com outra reserva");
+    if (dataPassada) return toast.error("A data e hora já passaram");
 
     const mesa = mesas.find((m) => m.id === mesaId);
     if (mesa && pessoas > mesa.capacidade) {
@@ -215,10 +279,47 @@ export default function Reservas() {
                 <Textarea value={obs} onChange={(e) => setObs(e.target.value)}
                   placeholder="Aniversário, mesa próxima à janela…" />
               </div>
+
+              {/* Status da validação em tempo real */}
+              {mesaId && dataHoraDate && (
+                <>
+                  {verificando ? (
+                    <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Verificando disponibilidade…
+                    </div>
+                  ) : conflito ? (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Conflito de horário</AlertTitle>
+                      <AlertDescription className="space-y-1">
+                        <p>
+                          Esta mesa já tem reserva para{" "}
+                          <strong>{conflito.cliente_nome}</strong> em{" "}
+                          <strong>{formatDate(conflito.data_hora)}</strong>{" "}
+                          ({conflito.duracao_minutos} min).
+                        </p>
+                        <p className="text-xs">
+                          Escolha outra mesa, outro horário ou ajuste a duração.
+                        </p>
+                      </AlertDescription>
+                    </Alert>
+                  ) : dataPassada ? (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Data inválida</AlertTitle>
+                      <AlertDescription>A data e hora selecionadas já passaram.</AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+                      <CheckCircle2 className="h-3 w-3" /> Horário disponível para esta mesa
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
-              <Button onClick={criar} disabled={salvando}>
+              <Button onClick={criar} disabled={salvando || verificando || !!conflito || dataPassada}>
                 {salvando ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
                 Criar reserva
               </Button>
