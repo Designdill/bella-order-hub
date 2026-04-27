@@ -26,6 +26,7 @@ import {
   ClipboardList,
   Wallet,
   Users,
+  CalendarCheck,
   LogOut,
 } from "lucide-react";
 
@@ -34,6 +35,7 @@ type Item = { title: string; url: string; icon: any; allow?: AppRole[] };
 const items: Item[] = [
   { title: "Painel", url: "/", icon: LayoutDashboard, allow: ["admin", "caixa"] },
   { title: "Mesas", url: "/mesas", icon: UtensilsCrossed, allow: ["admin", "garcom", "caixa"] },
+  { title: "Reservas", url: "/reservas", icon: CalendarCheck, allow: ["admin"] },
   { title: "Cozinha", url: "/cozinha", icon: ClipboardList, allow: ["admin", "cozinha"] },
   { title: "Caixa", url: "/caixa", icon: Wallet, allow: ["admin", "caixa"] },
   { title: "Cardápio", url: "/cardapio", icon: Pizza, allow: ["admin"] },
