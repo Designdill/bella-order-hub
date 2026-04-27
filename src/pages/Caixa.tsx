@@ -13,7 +13,8 @@ import {
 import { brl, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Receipt, Wallet } from "lucide-react";
+import { Loader2, Printer, Receipt, Wallet } from "lucide-react";
+import { printTicket } from "@/lib/print";
 
 type Pedido = {
   id: string; mesa_id: string; total: number; aberto_em: string;
@@ -55,6 +56,27 @@ export default function Caixa() {
 
   const abrirFechamento = (p: Pedido) => {
     setSelecionado(p); setForma("dinheiro"); setValor(String(p.total)); setObs("");
+  };
+
+  const imprimirConta = async (p: Pedido) => {
+    const { data: its } = await supabase
+      .from("itens_pedido")
+      .select("nome_produto, tamanho, quantidade, preco_unitario, subtotal, observacao")
+      .eq("pedido_id", p.id)
+      .order("created_at");
+    printTicket({
+      tipo: "comanda",
+      mesaNumero: p.mesas.numero,
+      itens: (its ?? []).map((i: any) => ({
+        nome_produto: i.nome_produto,
+        tamanho: i.tamanho,
+        quantidade: i.quantidade,
+        preco_unitario: Number(i.preco_unitario),
+        subtotal: Number(i.subtotal),
+        observacao: i.observacao,
+      })),
+      total: Number(p.total),
+    });
   };
 
   const fechar = async () => {
@@ -117,6 +139,9 @@ export default function Caixa() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="font-display text-lg font-bold text-primary">{brl(Number(p.total))}</span>
+                      <Button size="sm" variant="outline" onClick={() => imprimirConta(p)}>
+                        <Printer className="mr-1 h-4 w-4" /> Conta
+                      </Button>
                       <Button size="sm" onClick={() => abrirFechamento(p)}>Fechar conta</Button>
                     </div>
                   </li>
