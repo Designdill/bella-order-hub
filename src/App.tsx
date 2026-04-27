@@ -14,6 +14,7 @@ import Cardapio from "./pages/Cardapio";
 import Cozinha from "./pages/Cozinha";
 import Caixa from "./pages/Caixa";
 import Usuarios from "./pages/Usuarios";
+import Reservas from "./pages/Reservas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,10 @@ const App = () => (
               <Route
                 path="/usuarios"
                 element={<ProtectedRoute allow={["admin"]}><Usuarios /></ProtectedRoute>}
+              />
+              <Route
+                path="/reservas"
+                element={<ProtectedRoute allow={["admin"]}><Reservas /></ProtectedRoute>}
               />
             </Route>
             <Route path="*" element={<NotFound />} />
