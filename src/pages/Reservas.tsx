@@ -192,8 +192,14 @@ export default function Reservas() {
       hour: "2-digit",
       minute: "2-digit",
     });
+    if (!mesa) {
+      toast.warning("Horário aplicado, mas mesa não encontrada", {
+        description: `${quando} • ${duracao} min — selecione uma mesa válida`,
+      });
+      return;
+    }
     toast.success("Horário aplicado", {
-      description: `Mesa ${mesa?.numero ?? "?"} • ${quando} • ${duracao} min`,
+      description: `Mesa ${mesa.numero} • ${quando} • ${duracao} min`,
     });
   };
 
