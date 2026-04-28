@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CalendarPlus, Loader2, Phone, Users, X, Check, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CalendarPlus, Loader2, Phone, Users, X, Check, Clock, AlertTriangle, CheckCircle2, Timer } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 type Mesa = { id: string; numero: number; capacidade: number };
@@ -46,6 +46,27 @@ const STATUS_LABEL: Record<Reserva["status"], { label: string; cls: string }> = 
 function toLocalDateTimeInput(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const DURACAO_OPCOES: { value: number; label: string }[] = [
+  { value: 30, label: "30 min" },
+  { value: 45, label: "45 min" },
+  { value: 60, label: "1 hora" },
+  { value: 90, label: "1h 30min" },
+  { value: 120, label: "2 horas" },
+  { value: 150, label: "2h 30min" },
+  { value: 180, label: "3 horas" },
+  { value: 240, label: "4 horas" },
+];
+
+function formatHoraFim(inicio: Date | null, duracaoMin: number) {
+  if (!inicio) return null;
+  const fim = new Date(inicio.getTime() + duracaoMin * 60_000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const mesmaDia = fim.toDateString() === inicio.toDateString();
+  const hora = `${pad(fim.getHours())}:${pad(fim.getMinutes())}`;
+  if (mesmaDia) return hora;
+  return `${hora} (${pad(fim.getDate())}/${pad(fim.getMonth() + 1)})`;
 }
 
 export default function Reservas() {

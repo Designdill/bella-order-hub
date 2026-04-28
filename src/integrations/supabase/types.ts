@@ -390,7 +390,12 @@ export type Database = {
         | "cancelado"
       status_mesa: "livre" | "ocupada" | "aguardando_pagamento"
       status_pedido: "aberto" | "fechado" | "cancelado"
-      status_reserva: "confirmada" | "cancelada" | "concluida" | "no_show"
+      status_reserva:
+        | "confirmada"
+        | "cancelada"
+        | "concluida"
+        | "no_show"
+        | "em_andamento"
       tamanho_item: "M" | "G" | "UNICO"
     }
     CompositeTypes: {
@@ -536,7 +541,13 @@ export const Constants = {
       ],
       status_mesa: ["livre", "ocupada", "aguardando_pagamento"],
       status_pedido: ["aberto", "fechado", "cancelado"],
-      status_reserva: ["confirmada", "cancelada", "concluida", "no_show"],
+      status_reserva: [
+        "confirmada",
+        "cancelada",
+        "concluida",
+        "no_show",
+        "em_andamento",
+      ],
       tamanho_item: ["M", "G", "UNICO"],
     },
   },
