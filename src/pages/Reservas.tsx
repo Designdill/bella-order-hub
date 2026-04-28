@@ -185,13 +185,15 @@ export default function Reservas() {
   const escolherSugestao = (d: Date) => {
     setDataHora(toLocalDateTimeInput(d));
     setPopoverOpen(false);
+    const mesa = mesas.find((m) => m.id === mesaId);
+    const quando = d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     toast.success("Horário aplicado", {
-      description: d.toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      description: `Mesa ${mesa?.numero ?? "?"} • ${quando} • ${duracao} min`,
     });
   };
 
