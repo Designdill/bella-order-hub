@@ -105,6 +105,8 @@ export default function Reservas() {
     return dataHoraDate.getTime() < Date.now();
   }, [dataHoraDate]);
 
+  const dataVazia = !dataHora || !dataHoraDate;
+
   // Verifica conflito (debounce 350ms) sempre que mesa/data/duração mudarem
   useEffect(() => {
     if (!openNew) return;
