@@ -193,8 +193,8 @@ export default function Reservas() {
       minute: "2-digit",
     });
     if (!mesa) {
-      toast.warning("Horário aplicado, mas mesa não encontrada", {
-        description: `${quando} • ${duracao} min — selecione uma mesa válida`,
+      toast.error("Mesa não encontrada", {
+        description: `Horário ${quando} aplicado, mas a mesa selecionada (ID: ${mesaId ? mesaId.slice(0, 8) + "…" : "vazio"}) não está na lista. Recarregue a página ou escolha outra mesa.`,
       });
       return;
     }
