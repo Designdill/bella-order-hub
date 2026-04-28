@@ -386,21 +386,50 @@ export default function Reservas() {
               <div>
                 <div className="flex items-center justify-between">
                   <Label>Data e hora</Label>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 gap-1 px-2 text-xs"
-                    onClick={sugerirProximoHorario}
-                    disabled={sugerindo || !mesaId}
-                  >
-                    {sugerindo ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3 w-3" />
-                    )}
-                    Sugerir horário livre
-                  </Button>
+                  <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={(e) => { e.preventDefault(); abrirSugestoes(); }}
+                        disabled={sugerindo || !mesaId}
+                      >
+                        {sugerindo ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3" />
+                        )}
+                        Sugerir horários livres
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-64 p-2">
+                      <p className="px-2 pb-2 text-xs font-medium text-muted-foreground">
+                        Próximos horários livres ({duracao} min)
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {sugestoes.map((d, i) => (
+                          <Button
+                            key={i}
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="justify-start gap-2 font-normal"
+                            onClick={() => escolherSugestao(d)}
+                          >
+                            <Clock className="h-3 w-3 text-primary" />
+                            {formatDate(d.toISOString())}
+                          </Button>
+                        ))}
+                        {sugestoes.length === 0 && (
+                          <p className="px-2 py-2 text-xs text-muted-foreground">
+                            Nenhum horário disponível.
+                          </p>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Input type="datetime-local" value={dataHora} onChange={(e) => setDataHora(e.target.value)} />
                 {dataHoraDate && (
