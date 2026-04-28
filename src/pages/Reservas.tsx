@@ -194,7 +194,7 @@ export default function Reservas() {
   const criar = async () => {
     if (!mesaId) return toast.error("Selecione uma mesa");
     if (!nome.trim()) return toast.error("Informe o nome do cliente");
-    if (!dataHora) return toast.error("Informe data e hora");
+    if (dataVazia) return toast.error("Informe data e hora válidas");
     if (conflito) return toast.error("Existe conflito de horário com outra reserva");
     if (dataPassada) return toast.error("A data e hora já passaram");
 
