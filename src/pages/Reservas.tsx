@@ -185,6 +185,14 @@ export default function Reservas() {
   const escolherSugestao = (d: Date) => {
     setDataHora(toLocalDateTimeInput(d));
     setPopoverOpen(false);
+    toast.success("Horário aplicado", {
+      description: d.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    });
   };
 
   // Verifica conflito (debounce 350ms) sempre que mesa/data/duração mudarem
