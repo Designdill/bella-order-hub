@@ -287,13 +287,29 @@ export default function Reservas() {
                 </div>
                 <div>
                   <Label>Duração (min)</Label>
-                  <Input type="number" min={15} step={15} value={duracao}
-                    onChange={(e) => setDuracao(Math.max(15, Number(e.target.value)))} />
+                  <Select value={String(duracao)} onValueChange={(v) => setDuracao(Number(v))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Duração" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DURACAO_OPCOES.map((o) => (
+                        <SelectItem key={o.value} value={String(o.value)}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div>
                 <Label>Data e hora</Label>
                 <Input type="datetime-local" value={dataHora} onChange={(e) => setDataHora(e.target.value)} />
+                {dataHoraDate && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                    <Timer className="h-3 w-3" />
+                    Termina às <strong className="text-foreground">{formatHoraFim(dataHoraDate, duracao)}</strong>
+                  </p>
+                )}
               </div>
               <div>
                 <Label>Observação</Label>
