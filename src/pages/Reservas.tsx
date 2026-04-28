@@ -109,6 +109,8 @@ export default function Reservas() {
   const dataVazia = !dataHora || !dataHoraDate;
 
   const [sugerindo, setSugerindo] = useState(false);
+  const [sugestoes, setSugestoes] = useState<Date[]>([]);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   // Arredonda Date para o próximo múltiplo de `step` minutos (ex.: 15)
   const roundUpToStep = (d: Date, step = 15) => {
@@ -120,58 +122,69 @@ export default function Reservas() {
     return r;
   };
 
-  const sugerirProximoHorario = async () => {
+  const calcularSugestoes = async (qtd = 5): Promise<Date[]> => {
+    const agora = new Date();
+    const { data, error } = await supabase
+      .from("reservas")
+      .select("data_hora, duracao_minutos")
+      .eq("mesa_id", mesaId)
+      .eq("status", "confirmada")
+      .gte("data_hora", new Date(agora.getTime() - 8 * 60 * 60_000).toISOString())
+      .order("data_hora", { ascending: true });
+
+    if (error) throw error;
+
+    let candidato = roundUpToStep(new Date(agora.getTime() + 5 * 60_000), 15);
+    const limite = new Date(agora.getTime() + 14 * 24 * 60 * 60_000);
+    const duracaoMs = duracao * 60_000;
+
+    const ocupacoes = (data ?? []).map((r: any) => {
+      const ini = new Date(r.data_hora);
+      const fim = new Date(ini.getTime() + (r.duracao_minutos ?? 0) * 60_000);
+      return { ini, fim };
+    });
+
+    const slots: Date[] = [];
+    while (candidato < limite && slots.length < qtd) {
+      const fim = new Date(candidato.getTime() + duracaoMs);
+      const conflito = ocupacoes.find((o) => o.ini < fim && o.fim > candidato);
+      if (!conflito) {
+        slots.push(new Date(candidato));
+        // Avança 30min para variar o próximo slot
+        candidato = roundUpToStep(new Date(candidato.getTime() + 30 * 60_000), 15);
+      } else {
+        candidato = roundUpToStep(conflito.fim, 15);
+      }
+    }
+    return slots;
+  };
+
+  const abrirSugestoes = async () => {
     if (!mesaId) {
       toast.error("Selecione uma mesa antes de sugerir um horário");
       return;
     }
     setSugerindo(true);
     try {
-      // Busca todas as reservas confirmadas futuras da mesa
-      const agora = new Date();
-      const { data, error } = await supabase
-        .from("reservas")
-        .select("data_hora, duracao_minutos")
-        .eq("mesa_id", mesaId)
-        .eq("status", "confirmada")
-        .gte("data_hora", new Date(agora.getTime() - 8 * 60 * 60_000).toISOString())
-        .order("data_hora", { ascending: true });
-
-      if (error) throw error;
-
-      // Limites: tenta começar em "agora" (arredondado para próximos 15min, mínimo +15min)
-      // e busca slot livre nas próximas 14 dias
-      let candidato = roundUpToStep(new Date(agora.getTime() + 5 * 60_000), 15);
-      const limite = new Date(agora.getTime() + 14 * 24 * 60 * 60_000);
-      const duracaoMs = duracao * 60_000;
-
-      // Filtra ocupações relevantes
-      const ocupacoes = (data ?? []).map((r: any) => {
-        const ini = new Date(r.data_hora);
-        const fim = new Date(ini.getTime() + (r.duracao_minutos ?? 0) * 60_000);
-        return { ini, fim };
-      });
-
-      while (candidato < limite) {
-        const fim = new Date(candidato.getTime() + duracaoMs);
-        const conflito = ocupacoes.find((o) => o.ini < fim && o.fim > candidato);
-        if (!conflito) {
-          setDataHora(toLocalDateTimeInput(candidato));
-          toast.success("Horário sugerido", {
-            description: `${formatDate(candidato.toISOString())} (${duracao} min)`,
-          });
-          return;
-        }
-        // Pula para o fim do conflito (arredondado para o próximo step)
-        candidato = roundUpToStep(conflito.fim, 15);
+      const slots = await calcularSugestoes(5);
+      if (slots.length === 0) {
+        toast.error("Nenhum horário livre encontrado nos próximos 14 dias");
+        setSugestoes([]);
+        setPopoverOpen(false);
+        return;
       }
-
-      toast.error("Nenhum horário livre encontrado nos próximos 14 dias");
+      setSugestoes(slots);
+      setPopoverOpen(true);
     } catch (e: any) {
       toast.error("Erro ao sugerir horário", { description: e.message });
     } finally {
       setSugerindo(false);
     }
+  };
+
+  const escolherSugestao = (d: Date) => {
+    setDataHora(toLocalDateTimeInput(d));
+    setPopoverOpen(false);
   };
 
   // Verifica conflito (debounce 350ms) sempre que mesa/data/duração mudarem
