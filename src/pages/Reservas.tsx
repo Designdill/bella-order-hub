@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CalendarPlus, Loader2, Phone, Users, X, Check, Clock, AlertTriangle, CheckCircle2, Timer } from "lucide-react";
+import { CalendarPlus, Loader2, Phone, Users, X, Check, Clock, AlertTriangle, CheckCircle2, Timer, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 type Mesa = { id: string; numero: number; capacidade: number };
@@ -106,6 +106,72 @@ export default function Reservas() {
   }, [dataHoraDate]);
 
   const dataVazia = !dataHora || !dataHoraDate;
+
+  const [sugerindo, setSugerindo] = useState(false);
+
+  // Arredonda Date para o próximo múltiplo de `step` minutos (ex.: 15)
+  const roundUpToStep = (d: Date, step = 15) => {
+    const r = new Date(d);
+    r.setSeconds(0, 0);
+    const mins = r.getMinutes();
+    const add = (step - (mins % step)) % step;
+    r.setMinutes(mins + (add === 0 ? step : add));
+    return r;
+  };
+
+  const sugerirProximoHorario = async () => {
+    if (!mesaId) {
+      toast.error("Selecione uma mesa antes de sugerir um horário");
+      return;
+    }
+    setSugerindo(true);
+    try {
+      // Busca todas as reservas confirmadas futuras da mesa
+      const agora = new Date();
+      const { data, error } = await supabase
+        .from("reservas")
+        .select("data_hora, duracao_minutos")
+        .eq("mesa_id", mesaId)
+        .eq("status", "confirmada")
+        .gte("data_hora", new Date(agora.getTime() - 8 * 60 * 60_000).toISOString())
+        .order("data_hora", { ascending: true });
+
+      if (error) throw error;
+
+      // Limites: tenta começar em "agora" (arredondado para próximos 15min, mínimo +15min)
+      // e busca slot livre nas próximas 14 dias
+      let candidato = roundUpToStep(new Date(agora.getTime() + 5 * 60_000), 15);
+      const limite = new Date(agora.getTime() + 14 * 24 * 60 * 60_000);
+      const duracaoMs = duracao * 60_000;
+
+      // Filtra ocupações relevantes
+      const ocupacoes = (data ?? []).map((r: any) => {
+        const ini = new Date(r.data_hora);
+        const fim = new Date(ini.getTime() + (r.duracao_minutos ?? 0) * 60_000);
+        return { ini, fim };
+      });
+
+      while (candidato < limite) {
+        const fim = new Date(candidato.getTime() + duracaoMs);
+        const conflito = ocupacoes.find((o) => o.ini < fim && o.fim > candidato);
+        if (!conflito) {
+          setDataHora(toLocalDateTimeInput(candidato));
+          toast.success("Horário sugerido", {
+            description: `${formatDate(candidato.toISOString())} (${duracao} min)`,
+          });
+          return;
+        }
+        // Pula para o fim do conflito (arredondado para o próximo step)
+        candidato = roundUpToStep(conflito.fim, 15);
+      }
+
+      toast.error("Nenhum horário livre encontrado nos próximos 14 dias");
+    } catch (e: any) {
+      toast.error("Erro ao sugerir horário", { description: e.message });
+    } finally {
+      setSugerindo(false);
+    }
+  };
 
   // Verifica conflito (debounce 350ms) sempre que mesa/data/duração mudarem
   useEffect(() => {
