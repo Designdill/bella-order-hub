@@ -320,7 +320,19 @@ export default function Reservas() {
               </div>
 
               {/* Status da validação em tempo real */}
-              {mesaId && dataHoraDate && (
+              {dataVazia ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Data e hora obrigatórias</AlertTitle>
+                  <AlertDescription>Selecione uma data e hora válidas para a reserva.</AlertDescription>
+                </Alert>
+              ) : dataPassada ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Data inválida</AlertTitle>
+                  <AlertDescription>A data e hora selecionadas já passaram. Escolha um horário futuro.</AlertDescription>
+                </Alert>
+              ) : mesaId && dataHoraDate && (
                 <>
                   {verificando ? (
                     <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
@@ -342,12 +354,6 @@ export default function Reservas() {
                         </p>
                       </AlertDescription>
                     </Alert>
-                  ) : dataPassada ? (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Data inválida</AlertTitle>
-                      <AlertDescription>A data e hora selecionadas já passaram.</AlertDescription>
-                    </Alert>
                   ) : (
                     <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
                       <CheckCircle2 className="h-3 w-3" /> Horário disponível para esta mesa
@@ -358,7 +364,7 @@ export default function Reservas() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
-              <Button onClick={criar} disabled={salvando || verificando || !!conflito || dataPassada}>
+              <Button onClick={criar} disabled={salvando || verificando || !!conflito || dataPassada || dataVazia}>
                 {salvando ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
                 Criar reserva
               </Button>
